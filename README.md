@@ -148,4 +148,4 @@ of a guarantee in the future.
 
 This code has been lightly tested, and the author is not a security expert, so 
 use at your own risk. Although you are welcome to use this code, the author has 
-published this code to public repostiories for his own use and does not offer support.
+published this code to public repositories for his own use and does not offer support.
