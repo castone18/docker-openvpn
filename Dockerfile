@@ -26,4 +26,5 @@ EXPOSE 1194/udp
 CMD ["ovpn_run"]
 
 ADD ./bin/ovpn_* /usr/local/bin/
+ADD ./bin/dockervpn /opt/dockervpn
 RUN chmod a+x /usr/local/bin/*

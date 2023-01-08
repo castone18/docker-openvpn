@@ -14,7 +14,7 @@ OpenVPN server in a Docker container complete with an EasyRSA PKI CA.
 * Create, initialize, and start the docker container. The container will prompt for a passphrase to protect the
   private key used by the newly generated certificate authority.
 
-      ./bin/host_install -d YOUR_SERVER_DOMAIN_NAME
+      ./bin/dockervpn install YOUR_SERVER_DOMAIN_NAME
 
 * Retrieve a client configuration with embedded certificates
 
@@ -23,6 +23,10 @@ OpenVPN server in a Docker container complete with an EasyRSA PKI CA.
 * Command line interface help
 
       dockervpn help
+
+* Uninstall
+
+      dockervpn uninstall
 
 ## How Does It Work?
 
@@ -139,3 +143,9 @@ of a guarantee in the future.
 * Will generate client configs that route traffic through another client instead of the vpn server. Similar to NordVPN's meshnet.
 * Provides easy host install script.
 * Provides the dockervpn cli to make common tasks easier.
+
+## Warning
+
+This code has been lightly tested, and the author is not a security expert, so 
+use at your own risk. Although you are welcome to use this code, the author has 
+published this code to public repostiories for his own use and does not offer support.

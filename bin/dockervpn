@@ -4,7 +4,7 @@ usage() {
     echo "
 Docker VPN CLI usage and overview.
 
-USAGE: dockervpn command [command-options]
+USAGE: $0 command [command-options]
 
 To get detailed usage for a command, run:
     dockervpn help COMMAND
@@ -13,6 +13,7 @@ The list of commands is:
 
     backup       - backup up the /etc/openvpn directory to a tar file
     bash         - enter a bash shell in the container
+    install      - install and run docker container
     getclient    - retrieve a client configuration file
     listclients  - display a list of configured clients
     listcustom   - display a list of custom file fragments
@@ -20,7 +21,10 @@ The list of commands is:
     nano         - edit a file with the nano editor
     revokeclient - revoke a client certificate, they will no longer be able to connect
     removecustom - remove a custom fragment file
+    start        - start a stopped openvpn container
     status       - display server status
+    stop         - stop a running openpvn container
+    uninstall    - stop and uninstall docker container (all configuration data will be lost)
     vi           - edit a file with the vi editor
 "
 }
@@ -76,6 +80,16 @@ cmd_help() {
             route 128.0.0.0 128.0.0.0 192.168.2.1
         "
         ;;
+        install) echo "
+    install domain_name [vpn_port]
+        Install and run the docker container - domain_name is required, vpn_port is optional. The
+        container will be configured for vpn.domain_name so dns should resolve that name to the 
+        correct vpn server address. The container will also be configured to listen on udp port 
+        vpn_port (defaults to 1194). This dockervpn script will also be copied to /usr/local/bin.
+        The docker container will be started with restart unless_stopped, so the vpn server should
+        restart on host reboots unless it is stopped before the reboot.
+        "
+        ;;
         listclients) echo "
     listclients
         List the names of existing client configurations.
@@ -105,9 +119,26 @@ cmd_help() {
         filename is required. It is the name of an existing custom file fragment to be removed.
         "
         ;;
+        start) echo "
+    start
+        Start a stopped openvpn container.
+        "
+        ;;
         status) echo "
     status
         Display the vpn server status.
+        "
+        ;;
+        stop) echo "
+    stop
+        Stop a running openvpn container.
+        "
+        ;;
+        uninstall) echo "
+    uninstall
+        Remove the dockervpn script from /usr/local/bin, stop the docker container, and remove all docker
+        artifacts (image, volumes, etc.) for the container including the configuration data volume. All 
+        configuration data will be lost.
         "
         ;;
         vi) echo "
@@ -135,7 +166,7 @@ bash() {
 getclient() {
     if [ -z "$1" ]; then
         >&2 echo "Client name is required.\n"
-        >&2 usage
+        >&2 cmd_help getclient
         exit 1
     fi
     dir=`dirname $1`
@@ -151,6 +182,27 @@ getclient() {
         docker exec -it openvpn /usr/local/bin/ovpn_makclient -n $client -f $2
     fi
     docker exec -it openvpn cat /etc/openvpn/configs/clients/$client.ovpn >$1
+}
+
+install() {
+    if [ -z "$1" ]; then
+        >&2 echo "Domain name is required.\n"
+        >&2 cmd_help install
+        exit 1
+    fi
+    if [ -z "$2" ]; then
+        OPENVPN_PORT_NUMBER=1194
+    else
+        OPENVPN_PORT_NUMBER=$2
+    fi
+    cp $0 /usr/local/bin/dockervpn
+    docker run -v openvpn_data:/etc/openvpn --rm -it castone38/dockervpn ovpn_genconfig \
+        -u udp://vpn.$1 -C AES-256-GCM -c -a SHA256 -s "10.8.0.0/24" -d \
+        -n "208.67.222.222 208.67.220.220" -e "explicit-exit-notify 1" \
+        -e "ifconfig-pool-persist /etc/openvpn/ipp.txt" \
+        -p "redirect-gateway def1 bypass-dhcp"
+    docker run --name openvpn --restart unless-stopped -v openvpn_data:/etc/openvpn -d \
+        -p $OPENVPN_PORT_NUMBER:1194/udp --cap-add=NET_ADMIN castone38/dockervpn
 }
 
 listclients() {
@@ -172,7 +224,7 @@ nano() {
 revokeclient() {
     if [ -z "$1" ]; then
         >&2 echo "Client name is required.\n"
-        >&2 usage
+        >&2 cmd_help revokeclient
         exit 1
     fi
     docker exec -it openvpn /usr/local/bin/ovpn_revokeclient $1
@@ -182,8 +234,24 @@ removecustom() {
     docker exec -it openvpn rm -f /etc/openvpn/configs/fragments/$1
 }
 
+start() {
+    docker start openvpn
+}
+
 status() {
     docker exec -it openvpn /usr/local/bin/ovpn_status
+}
+
+stop() {
+    docker stop openvpn
+}
+
+uninstall() {
+    docker stop openvpn
+    docker rm openvpn
+    docker volume rm openvpn_data
+    docker image rm castone38/dockervpn:latest
+    rm -f /usr/local/bin/dockervpn
 }
 
 vi() {
@@ -216,6 +284,9 @@ case "$cmd" in
     getclient)
         getclient "$@"
         ;;
+    install)
+        install "$@"
+        ;;
     listclients)
         listclients
         ;;
@@ -234,8 +305,17 @@ case "$cmd" in
     removecustom)
         removecustom "$@"
         ;;
+    start)
+        start
+        ;;
     status)
         status
+        ;;
+    stop)
+        stop
+        ;;
+    uninstall)
+        uninstall
         ;;
     vi)
         vi "$@"
