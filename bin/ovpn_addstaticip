@@ -1,0 +1,57 @@
+#!/bin/bash
+
+usage() {
+    echo "usage: $0 -n configname -i ip_address [-h]"
+    echo "    This will add an entry to the /etc/openvpn/ipp.txt file so that the"
+    echo "    specified configname will get the ip address of ip_address whenever"
+    echo "    it connects. Both parameters are required. If the configname already"
+    echo "    exists in the ipp.txt file, then the command will fail and the entry"
+    echo "    must be deleted before using this command. An entry can be deleted"
+    echo "    using the dockervpn nano or dockervpn vi commands. This command is"
+    echo "    intended to be used before the openvpn container is run for the first"
+    echo "    time, hence no ability to replace entries is provided. The -h option"
+    echo "    is optional and prints this help."
+}
+
+while getopts ":n:i:h" opt; do
+    case $opt in
+        h)
+            usage
+            exit 0
+            ;;
+        n)
+            config_name="$OPTARG"
+            ;;
+        i)
+            config_ip="$OPTARG"
+            ;;
+        \?)
+            set +x
+            echo "Invalid option: -$OPTARG" >&2
+            usage
+            exit 1
+            ;;
+        :)
+            set +x
+            echo "Option -$OPTARG requires an argument." >&2
+            usage
+            exit 1
+            ;;
+    esac
+done
+
+if [ -z "$config_name" ]; then
+    echo "Config name is a required argument."
+    usage
+    exit 1;
+fi
+if [ -z "$config_ip" ]; then
+    echo "Config ip address is a required argument."
+    usage
+    exit 1;
+fi
+if [ ! -f /etc/openvpn/ipp.txt ]; then
+    touch /etc/openvpn/ipp.txt
+fi
+echo "$config_name,$config_ip," >> /etc/openvpn/ipp.txt
+exit 0
