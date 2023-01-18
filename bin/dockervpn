@@ -181,11 +181,15 @@ getclient() {
         mkdir -p $dir
     fi 
     if [ -z "$2" ]; then
-        docker exec -it openvpn /usr/local/bin/ovpn_makclient -n $client
+        docker exec openvpn /usr/local/bin/ovpn_makclient -n $client
     else
-        [ -f $2 ] && cp $2 /srv/cloudAtHome/openvpn/data/configs/fragments
         customfname=`basename $2`
-        docker exec -it openvpn /usr/local/bin/ovpn_makclient -n $client -f $customfname
+        if [ -f $2 ]; then
+            cp $2 /srv/cloudAtHome/openvpn/data/configs/fragments
+            docker exec openvpn /usr/local/bin/ovpn_makclient -n $client -f $customfname
+        else
+            docker exec -it openvpn /usr/local/bin/ovpn_makclient -n $client -f $customfname
+        fi
     fi
     cp /srv/cloudAtHome/openvpn/data/configs/clients/$client.ovpn $1
 }
