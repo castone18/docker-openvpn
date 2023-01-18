@@ -56,7 +56,7 @@ cmd_help() {
         customfile is optional. It is the name of a file containing configuration to add to
         the client configuration file. If the file exists in the local file system it is
         copied to the container, stored, and added to the end of the client configuration. If
-        it does not exist, and editor is started for the user to enter lines into it.
+        it does not exist, an editor is started for the user to enter lines into it.
         
         If a client configuraton does not exist for clientname, then a new one is generated, 
         stored, and written to filename. If the client configuration does exist, it is 
@@ -187,7 +187,7 @@ getclient() {
         customfname=`basename $2`
         docker exec -it openvpn /usr/local/bin/ovpn_makclient -n $client -f $customfname
     fi
-    docker exec -it openvpn cat /etc/openvpn/configs/clients/$client.ovpn >$1
+    cp /srv/cloudAtHome/openvpn/data/configs/clients/$client.ovpn $1
 }
 
 install() {
