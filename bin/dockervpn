@@ -54,18 +54,18 @@ cmd_help() {
         would be the name that is listed in listclients.
 
         customfile is optional. It is the name of a file containing configuration to add to
-        the client configuration file.
+        the client configuration file. If the file exists in the local file system it is
+        copied to the container, stored, and added to the end of the client configuration. If
+        it does not exist, and editor is started for the user to enter lines into it.
         
-        If a client configuraton does not exist for clientname, then a new one is 
-        generated, stored, and returned on standard output. If the client configuration
-        does exist, it is retrieved and returned on standard output.
+        If a client configuraton does not exist for clientname, then a new one is generated, 
+        stored, and written to filename. If the client configuration does exist, it is 
+        retrieved and written to filename.
 
         A customfile is used to provide additional client configuration that is to be added
         to the client configuration file. For instance this can be used to configure mesh networking
         between client A and client B. With mesh networking, client A's traffic will be routed 
         through an Internet gateway connected to client B instead of through the vpn server. 
-        If the customfile does not exist, then the nano editor is started for the user to enter 
-        the custom configuration.
 
         Example custom configration file:
         Assuming the vpn server address has vpn address 10.8.0.1, and the vpn clients are on the
@@ -169,7 +169,7 @@ bash() {
 
 getclient() {
     if [ -z "$1" ]; then
-        >&2 echo "Client name is required.\n"
+        >&2 echo "Client filename is required.\n"
         >&2 cmd_help getclient
         exit 1
     fi
@@ -183,7 +183,9 @@ getclient() {
     if [ -z "$2" ]; then
         docker exec -it openvpn /usr/local/bin/ovpn_makclient -n $client
     else
-        docker exec -it openvpn /usr/local/bin/ovpn_makclient -n $client -f $2
+        [ -f $2 ] && cp $2 /srv/cloudAtHome/openvpn/data/configs/fragments
+        customfname=`basename $2`
+        docker exec -it openvpn /usr/local/bin/ovpn_makclient -n $client -f $customfname
     fi
     docker exec -it openvpn cat /etc/openvpn/configs/clients/$client.ovpn >$1
 }
