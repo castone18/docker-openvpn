@@ -241,7 +241,7 @@ install() {
     docker run -v $install_srv_dir:/etc/openvpn --rm -it castone38/dockervpn ovpn_genconfig \
         -u udp://vpn.$install_domain_name:$install_port -C AES-256-GCM -c -a SHA256 \
         -s "10.8.0.0/24" -d -n "208.67.222.222 208.67.220.220" -e "explicit-exit-notify 1" \
-        -e "ifconfig-pool-persist /etc/openvpn/ipp.txt" -b \
+        -e "ifconfig-pool-persist /etc/openvpn/ipp.txt" -b -N \
         -p "redirect-gateway def1 bypass-dhcp"
     if [[ $install_run == 1 ]]; then
         docker run --name openvpn --restart unless-stopped -v $install_srv_dir:/etc/openvpn -d \
